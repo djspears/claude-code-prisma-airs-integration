@@ -150,7 +150,8 @@ echo "Exit code: $?"
 | `AIRS_PROFILE_NAME` | *(required)* | Your security profile name |
 | `AIRS_API_ENDPOINT` | US endpoint | Override for EU/India/Singapore regions |
 | `AIRS_APP_NAME` | `claude-code` | Label shown in AIRS logs |
-| `AIRS_DEBUG` | off | Set to `1` to enable verbose debug output |
+| `AIRS_FAIL_CLOSED` | `0` | Set to `1` to block prompts when AIRS is unavailable |
+| `AIRS_DEBUG` | `0` | Set to `1` to enable verbose debug output |
 
 ### Regional Endpoints
 
@@ -177,7 +178,19 @@ sed -i '' '/AIRS_PROFILE_NAME/d' ~/.zshrc
 
 ## Fail-Safe Behavior
 
-The hook is designed to **fail open** — if anything goes wrong (API unreachable, network timeout, missing credentials, HTTP errors), the prompt is allowed through and a warning is printed to stderr. Your work is never blocked by an AIRS outage.
+The hook supports two modes when AIRS is unavailable (API down, network timeout, missing credentials):
+
+**Fail open** (default) — the prompt is allowed through and a warning is printed. Your work is never blocked by an AIRS outage.
+
+**Fail closed** — the prompt is blocked until AIRS is reachable again. For environments where security takes priority over availability.
+
+```bash
+# Fail open (default — allow prompts if AIRS is unavailable)
+export AIRS_FAIL_CLOSED=0
+
+# Fail closed (block prompts if AIRS is unavailable)
+export AIRS_FAIL_CLOSED=1
+```
 
 ## License
 

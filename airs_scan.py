@@ -12,6 +12,9 @@ Required environment variables:
 Optional:
   AIRS_API_ENDPOINT — override the base URL (default: US endpoint)
   AIRS_APP_NAME     — label shown in AIRS logs (default: "claude-code")
+  AIRS_FAIL_CLOSED  — set to "1" to block prompts when AIRS is unavailable
+                      (default: "0" — fail open, allow prompts on errors)
+  AIRS_DEBUG        — set to "1" to enable verbose debug output
 """
 
 import json
@@ -32,6 +35,7 @@ PROFILE_NAME = os.environ.get("AIRS_PROFILE_NAME", "")
 ENDPOINT     = os.environ.get("AIRS_API_ENDPOINT",
                "https://service.api.aisecurity.paloaltonetworks.com")
 APP_NAME     = os.environ.get("AIRS_APP_NAME", "claude-code")
+FAIL_CLOSED  = os.environ.get("AIRS_FAIL_CLOSED", "0") == "1"
 
 SCAN_URL = f"{ENDPOINT.rstrip('/')}/v1/scan/sync/request"
 
@@ -113,13 +117,21 @@ def main():
     # ── Validate config ────────────────────────────────────────────────────────
     dbg(f"API_KEY set: {bool(API_KEY)} | PROFILE_NAME: '{PROFILE_NAME}'")
 
+    def fail(reason: str):
+        """Block or allow based on AIRS_FAIL_CLOSED setting."""
+        if FAIL_CLOSED:
+            block_message = {
+                "decision": "block",
+                "reason": f"🛡️  AIRS scanner error (fail-closed mode):\n{reason}\n\nResolve the issue or set AIRS_FAIL_CLOSED=0 to allow prompts when AIRS is unavailable."
+            }
+            print(json.dumps(block_message))
+            sys.exit(1)
+        else:
+            print(f"⚠️  AIRS scanner error (fail-open): {reason}", file=sys.stderr)
+            sys.exit(0)
+
     if not API_KEY or not PROFILE_NAME:
-        print(
-            "⚠️  AIRS scanner not configured. Set AIRS_API_KEY and "
-            "AIRS_PROFILE_NAME environment variables.",
-            file=sys.stderr
-        )
-        sys.exit(0)  # fail open — don't block the user
+        fail("AIRS_API_KEY and AIRS_PROFILE_NAME environment variables are not set.")
 
     # ── Read prompt ────────────────────────────────────────────────────────────
     prompt = read_prompt_from_stdin()
@@ -135,11 +147,9 @@ def main():
         result = scan_prompt(prompt)
         dbg(f"AIRS response: {json.dumps(result)}")
     except urllib.error.HTTPError as e:
-        print(f"⚠️  AIRS API error {e.code}: {e.reason}", file=sys.stderr)
-        sys.exit(0)  # fail open on API errors
+        fail(f"AIRS API returned HTTP {e.code}: {e.reason}")
     except Exception as e:
-        print(f"⚠️  AIRS scanner error: {e}", file=sys.stderr)
-        sys.exit(0)  # fail open on network errors
+        fail(f"Could not reach AIRS API: {e}")
 
     action   = result.get("action", "allow")
     category = result.get("category", "benign")

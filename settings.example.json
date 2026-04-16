@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 /Users/YOUR_USERNAME/.claude/hooks/airs_scan.py"
+          }
+        ]
+      }
+    ]
+  }
+}

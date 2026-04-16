@@ -73,8 +73,19 @@ cp airs_scan.py ~/.claude/hooks/airs_scan.py
 Add to your `~/.zshrc` (Mac/Linux) or `~/.bashrc`:
 
 ```bash
+# Required
 export AIRS_API_KEY="your-x-pan-token-here"
 export AIRS_PROFILE_NAME="your-profile-name-here"
+
+# Optional — remove any lines you don't need
+export AIRS_FAIL_CLOSED=0          # 1 = block prompts if AIRS is unreachable, 0 = allow (default)
+export AIRS_APP_NAME="claude-code" # label shown in Strata Cloud Manager logs
+export AIRS_DEBUG=0                # 1 = verbose debug output in terminal, 0 = silent (default)
+
+# Optional — only needed if you are outside the US region
+# export AIRS_API_ENDPOINT="https://service-de.api.aisecurity.paloaltonetworks.com"  # EU (Germany)
+# export AIRS_API_ENDPOINT="https://service-in.api.aisecurity.paloaltonetworks.com"  # India
+# export AIRS_API_ENDPOINT="https://service-sg.api.aisecurity.paloaltonetworks.com"  # Singapore
 ```
 
 Then reload:
